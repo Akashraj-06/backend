@@ -20,4 +20,5 @@ public class WorkerJobDto {
     private String address;
     private LocalDateTime requestedDate;
     private String status; // PENDING, ASSIGNED, COMPLETED, etc.
+    private String photoUrl;
 }

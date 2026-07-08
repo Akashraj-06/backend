@@ -105,6 +105,7 @@ public class JobService {
                 .address(req.getAddress())
                 .requestedDate(req.getCreatedAt())
                 .status("PENDING")
+                .photoUrl(req.getPhotoUrl())
                 .build()
         ).collect(Collectors.toList());
 
@@ -122,6 +123,7 @@ public class JobService {
                 .address(req != null ? req.getAddress() : "")
                 .requestedDate(ja.getAcceptedAt())
                 .status(ja.getStatus().toString())
+                .photoUrl(req != null ? req.getPhotoUrl() : null)
                 .build();
         }).collect(Collectors.toList());
 
