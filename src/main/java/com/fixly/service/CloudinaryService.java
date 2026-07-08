@@ -4,6 +4,8 @@ import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
 import com.fixly.exception.ImageUploadException;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -15,6 +17,8 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class CloudinaryService {
 
+    private static final Logger log = LoggerFactory.getLogger(CloudinaryService.class);
+
     private static final long   MAX_FILE_SIZE   = 5 * 1024 * 1024L; // 5 MB
     private static final List<String> ALLOWED_TYPES = List.of(
             "image/jpeg", "image/png", "image/webp"
@@ -25,23 +29,21 @@ public class CloudinaryService {
     /**
      * Validates and uploads a MultipartFile to Cloudinary.
      *
-     * The Cloudinary Java SDK uploader().upload() officially supports:
-     *   - byte[]   ← used here (MultipartFile.getBytes())
-     *   - File
-     *   - String   (URL or Base64 data URI)
-     *
-     * InputStream is NOT a supported parameter type and causes:
-     *   "Unrecognized file parameter sun.nio.ch.ChannelInputStream@..."
-     *
      * @param file the image to upload
      * @return the secure Cloudinary URL of the uploaded image
      */
     public String upload(MultipartFile file) {
         validateFile(file);
 
+        log.info("Attempting file upload. Name: {}, Size: {}, Type: {}", 
+                file.getOriginalFilename(), file.getSize(), file.getContentType());
+
         try {
+            byte[] fileBytes = file.getBytes();
+            log.info("File bytes loaded. Length: {}", fileBytes.length);
+
             Map<?, ?> result = cloudinary.uploader().upload(
-                    file.getBytes(),
+                    fileBytes,
                     ObjectUtils.asMap(
                             "folder",          "fixly/service-requests",
                             "resource_type",   "image",
@@ -50,13 +52,19 @@ public class CloudinaryService {
                     )
             );
 
+            log.info("Cloudinary upload response: {}", result);
+
             String secureUrl = (String) result.get("secure_url");
             if (secureUrl == null || secureUrl.isBlank()) {
                 throw new ImageUploadException("Cloudinary did not return a secure URL");
             }
             return secureUrl;
         } catch (IOException e) {
+            log.error("IOException reading file upload payload", e);
             throw new ImageUploadException("Failed to upload image to Cloudinary: " + e.getMessage(), e);
+        } catch (Exception e) {
+            log.error("Unexpected exception during Cloudinary SDK call", e);
+            throw new ImageUploadException("Unexpected error during Cloudinary upload: " + e.getMessage(), e);
         }
     }
 
