@@ -82,6 +82,13 @@
             <optional>true</optional>
         </dependency>
 
+        <!-- Cloudinary Java SDK -->
+        <dependency>
+            <groupId>com.cloudinary</groupId>
+            <artifactId>cloudinary-http45</artifactId>
+            <version>1.39.0</version>
+        </dependency>
+
         <!-- Spring Boot Test -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
