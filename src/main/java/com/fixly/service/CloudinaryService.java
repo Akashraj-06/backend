@@ -8,7 +8,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 
@@ -26,15 +25,23 @@ public class CloudinaryService {
     /**
      * Validates and uploads a MultipartFile to Cloudinary.
      *
+     * The Cloudinary Java SDK uploader().upload() officially supports:
+     *   - byte[]   ← used here (MultipartFile.getBytes())
+     *   - File
+     *   - String   (URL or Base64 data URI)
+     *
+     * InputStream is NOT a supported parameter type and causes:
+     *   "Unrecognized file parameter sun.nio.ch.ChannelInputStream@..."
+     *
      * @param file the image to upload
      * @return the secure Cloudinary URL of the uploaded image
      */
     public String upload(MultipartFile file) {
         validateFile(file);
 
-        try (InputStream inputStream = file.getInputStream()) {
+        try {
             Map<?, ?> result = cloudinary.uploader().upload(
-                    inputStream,
+                    file.getBytes(),
                     ObjectUtils.asMap(
                             "folder",          "fixly/service-requests",
                             "resource_type",   "image",
@@ -42,7 +49,7 @@ public class CloudinaryService {
                             "unique_filename", true
                     )
             );
-            
+
             String secureUrl = (String) result.get("secure_url");
             if (secureUrl == null || secureUrl.isBlank()) {
                 throw new ImageUploadException("Cloudinary did not return a secure URL");
