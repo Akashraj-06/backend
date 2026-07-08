@@ -31,6 +31,12 @@ public class User {
     @Column(length = 20)
     private String phone;
 
+    @Column(length = 255)
+    private String address;
+
+    @Column(name = "profile_image_url", length = 500)
+    private String profileImageUrl;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Role role;
