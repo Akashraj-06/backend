@@ -21,4 +21,5 @@ public class WorkerJobDto {
     private LocalDateTime requestedDate;
     private String status; // PENDING, ASSIGNED, COMPLETED, etc.
     private String photoUrl;
+    private Integer customerRating; // null if not yet rated
 }

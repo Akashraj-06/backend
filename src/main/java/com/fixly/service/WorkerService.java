@@ -33,6 +33,7 @@ public class WorkerService {
                     .totalJobs(w.getTotalJobs())
                     .distance(Math.round(dist * 10.0) / 10.0) // Round to 1 decimal
                     .categoryName(w.getServiceCategory().getName())
+                    .profileImageUrl(w.getUser().getProfileImageUrl())
                     .build();
         }).collect(Collectors.toList());
     }

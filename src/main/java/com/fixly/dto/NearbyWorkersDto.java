@@ -16,4 +16,5 @@ public class NearbyWorkersDto {
     private Integer totalJobs;
     private Double distance; // in km
     private String categoryName;
+    private String profileImageUrl;
 }

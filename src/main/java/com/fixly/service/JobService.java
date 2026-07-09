@@ -4,8 +4,10 @@ import com.fixly.dto.WorkerJobDto;
 import com.fixly.entity.JobAssignment;
 import com.fixly.entity.ServiceRequest;
 import com.fixly.entity.Worker;
+import com.fixly.entity.WorkerRating;
 import com.fixly.repository.JobAssignmentRepository;
 import com.fixly.repository.ServiceRequestRepository;
+import com.fixly.repository.WorkerRatingRepository;
 import com.fixly.repository.WorkerRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -13,6 +15,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -22,6 +26,7 @@ public class JobService {
     private final JobAssignmentRepository jobAssignmentRepository;
     private final ServiceRequestRepository serviceRequestRepository;
     private final WorkerRepository workerRepository;
+    private final WorkerRatingRepository workerRatingRepository;
 
     @Transactional
     public JobAssignment acceptJob(Long workerUserId, Long serviceRequestId) {
@@ -128,7 +133,7 @@ public class JobService {
         }).collect(Collectors.toList());
 
         jobs.addAll(assignedJobs);
-        
+
         // Sort by requestedDate desc
         jobs.sort((j1, j2) -> {
             if (j1.getRequestedDate() == null && j2.getRequestedDate() == null) return 0;
@@ -136,6 +141,27 @@ public class JobService {
             if (j2.getRequestedDate() == null) return -1;
             return j2.getRequestedDate().compareTo(j1.getRequestedDate());
         });
+
+        // Batch-load customer ratings for all jobs in a single query
+        Set<Long> serviceRequestIds = jobs.stream()
+                .map(WorkerJobDto::getId)
+                .filter(id -> id != null)
+                .collect(Collectors.toSet());
+
+        if (!serviceRequestIds.isEmpty()) {
+            Map<Long, Integer> ratingByServiceRequestId = workerRatingRepository
+                    .findByServiceRequestIdIn(serviceRequestIds)
+                    .stream()
+                    .collect(Collectors.toMap(
+                            r -> r.getServiceRequest().getId(),
+                            WorkerRating::getRating
+                    ));
+            jobs.forEach(job -> {
+                if (job.getId() != null) {
+                    job.setCustomerRating(ratingByServiceRequestId.get(job.getId()));
+                }
+            });
+        }
 
         return jobs;
     }
